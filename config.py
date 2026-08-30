@@ -19,7 +19,8 @@ SCAN_INTERVAL_SECONDS = int(os.getenv("SCAN_INTERVAL_SECONDS", "60"))
 SYMBOLS = [
     {"name": "XAUUSD", "source": "yfinance", "yf_symbol": "GC=F"},   # Gold futures
     {"name": "NASDAQ", "source": "yfinance", "yf_symbol": "NQ=F"},   # Nasdaq-100 futures
-    {"name": "BTCUSD", "source": "binance", "binance_symbol": "BTCUSDT"},
+    {"name": "BTCUSD", "source": "yfinance", "yf_symbol": "BTC-USD"},
+
 ]
 
 # Tahlil qilinadigan timeframe'lar (ICT uslubida: yuqori TF trend, quyi TF kirish)
