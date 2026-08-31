@@ -1,7 +1,5 @@
 """
-Bot sozlamalarini .env fayldan o'qiydi.
-Ishga tushirishdan oldin .env.example faylini .env deb nomlang
-va o'z ma'lumotlaringizni kiriting.
+Bot sozlamalarini .env fayldan (yoki Render Environment Variables'dan) o'qiydi.
 """
 import os
 from dotenv import load_dotenv
@@ -10,17 +8,18 @@ load_dotenv()
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
+TWELVEDATA_API_KEY = os.getenv("TWELVEDATA_API_KEY", "")
 
-SCAN_INTERVAL_SECONDS = int(os.getenv("SCAN_INTERVAL_SECONDS", "60"))
+# Twelve Data bepul tarifi cheklovlariga mos: 8 so'rov/daqiqa, 800 so'rov/kun.
+# Har skanerlashda 3 ta symbol x 3 ta timeframe = 9 so'rov ketadi, shuning
+# uchun standart oraliq 20 daqiqa (1200 soniya) qilib qo'yilgan.
+SCAN_INTERVAL_SECONDS = int(os.getenv("SCAN_INTERVAL_SECONDS", "1200"))
 
-# Kuzatiladigan instrumentlar va ularning manba turi
-# "yfinance" -> Yahoo Finance (internet orqali, telefon/Termux'da ham ishlaydi)
-# "binance" -> Binance ochiq API orqali
+# Kuzatiladigan instrumentlar (barchasi Twelve Data orqali)
 SYMBOLS = [
-    {"name": "XAUUSD", "source": "yfinance", "yf_symbol": "GC=F"},   # Gold futures
-    {"name": "NASDAQ", "source": "yfinance", "yf_symbol": "NQ=F"},   # Nasdaq-100 futures
-    {"name": "BTCUSD", "source": "yfinance", "yf_symbol": "BTC-USD"},
-
+    {"name": "XAUUSD", "source": "twelvedata", "td_symbol": "XAU/USD"},
+    {"name": "NASDAQ", "source": "twelvedata", "td_symbol": "NDX"},
+    {"name": "BTCUSD", "source": "twelvedata", "td_symbol": "BTC/USD"},
 ]
 
 # Tahlil qilinadigan timeframe'lar (ICT uslubida: yuqori TF trend, quyi TF kirish)
