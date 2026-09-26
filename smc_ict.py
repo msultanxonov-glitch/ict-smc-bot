@@ -1,16 +1,12 @@
 """
 ICT / SMC (Smart Money Concepts) tahlil funksiyalari.
-
-Diqqat: bu usullar tabiatan diskretsion (subyektiv) bo'lib, bu yerdagi
-qoidalar ularning ko'p tarqalgan, lekin soddalashtirilgan algoritmik
-talqinidir. Har qanday signalni qo'lda tekshirmasdan haqiqiy pul bilan
-savdo qilishga asos sifatida ishlatmang.
+Diqqat: bu usullar tabiatan diskretsion bo'lib, bu yerdagi qoidalar
+ularning soddalashtirilgan algoritmik talqinidir.
 """
 import pandas as pd
 
 
 def find_swings(df: pd.DataFrame, left: int = 2, right: int = 2) -> pd.DataFrame:
-    """Fraktal asosida swing high/low nuqtalarini topadi."""
     df = df.copy()
     df["swing_high"] = False
     df["swing_low"] = False
@@ -26,11 +22,6 @@ def find_swings(df: pd.DataFrame, left: int = 2, right: int = 2) -> pd.DataFrame
 
 
 def detect_market_structure(df: pd.DataFrame) -> dict:
-    """
-    Oxirgi swing nuqtalar asosida trendni va oxirgi BOS/CHoCH hodisasini aniqlaydi.
-    BOS (Break of Structure) = trend davom etmoqda
-    CHoCH (Change of Character) = trend o'zgarishi ehtimoli
-    """
     swings = find_swings(df)
     highs = swings[swings["swing_high"]][["time", "high"]].reset_index(drop=True)
     lows = swings[swings["swing_low"]][["time", "low"]].reset_index(drop=True)
@@ -66,33 +57,18 @@ def detect_market_structure(df: pd.DataFrame) -> dict:
 
 
 def detect_fvg(df: pd.DataFrame, lookback: int = 50) -> list:
-    """
-    Fair Value Gap (imbalance): 3 ta sham ketma-ketligida 1-sham va 3-sham
-    orasida bo'shliq (gap) bo'lsa, bu FVG hisoblanadi.
-    """
     fvgs = []
     start = max(2, len(df) - lookback)
     for i in range(start, len(df)):
         c1, c3 = df.iloc[i - 2], df.iloc[i]
         if c3["low"] > c1["high"]:
-            fvgs.append({
-                "type": "bullish", "index": i, "time": df["time"].iloc[i],
-                "top": c3["low"], "bottom": c1["high"],
-            })
+            fvgs.append({"type": "bullish", "index": i, "time": df["time"].iloc[i], "top": c3["low"], "bottom": c1["high"]})
         elif c3["high"] < c1["low"]:
-            fvgs.append({
-                "type": "bearish", "index": i, "time": df["time"].iloc[i],
-                "top": c1["low"], "bottom": c3["high"],
-            })
+            fvgs.append({"type": "bearish", "index": i, "time": df["time"].iloc[i], "top": c1["low"], "bottom": c3["high"]})
     return fvgs
 
 
 def detect_order_blocks(df: pd.DataFrame, lookback: int = 100) -> list:
-    """
-    Oddiy order block: kuchli impulsiv sham (oldingi shamlar range'idan
-    sezilarli katta tanaga ega) oldidan turgan qarama-qarshi rangdagi
-    oxirgi sham - order block deb belgilanadi.
-    """
     obs = []
     start = max(3, len(df) - lookback)
     body = (df["close"] - df["open"]).abs()
@@ -107,32 +83,18 @@ def detect_order_blocks(df: pd.DataFrame, lookback: int = 100) -> list:
         if not is_impulsive:
             continue
         bullish_impulse = df["close"].iloc[i] > df["open"].iloc[i]
-
-        # order block - impulsdan oldingi qarama-qarshi rangli sham
         prev = df.iloc[i - 1]
         prev_bearish = prev["close"] < prev["open"]
         prev_bullish = prev["close"] > prev["open"]
 
         if bullish_impulse and prev_bearish:
-            obs.append({
-                "type": "bullish_ob", "index": i - 1, "time": df["time"].iloc[i - 1],
-                "top": prev["high"], "bottom": prev["low"],
-            })
+            obs.append({"type": "bullish_ob", "index": i - 1, "time": df["time"].iloc[i - 1], "top": prev["high"], "bottom": prev["low"]})
         elif not bullish_impulse and prev_bullish:
-            obs.append({
-                "type": "bearish_ob", "index": i - 1, "time": df["time"].iloc[i - 1],
-                "top": prev["high"], "bottom": prev["low"],
-            })
+            obs.append({"type": "bearish_ob", "index": i - 1, "time": df["time"].iloc[i - 1], "top": prev["high"], "bottom": prev["low"]})
     return obs
 
 
 def detect_liquidity_sweep(df: pd.DataFrame, lookback: int = 50) -> list:
-    """
-    Likvidlik supurish (stop hunt): narx oldingi swing high/low'dan
-    fitila (wick) bilan o'tib ketadi, lekin yopilish o'sha nuqtadan
-    ichkarida bo'ladi - bu "bank/institutsional manipulyatsiya" belgisi
-    sifatida talqin qilinadi.
-    """
     swings = find_swings(df)
     sweeps = []
     start = max(5, len(df) - lookback)
@@ -148,25 +110,15 @@ def detect_liquidity_sweep(df: pd.DataFrame, lookback: int = 50) -> list:
         if not past_highs.empty:
             level = past_highs["high"].iloc[-1]
             if row["high"] > level and row["close"] < level:
-                sweeps.append({
-                    "type": "sell_side_sweep", "time": row["time"],
-                    "level": level, "wick_high": row["high"],
-                })
+                sweeps.append({"type": "sell_side_sweep", "time": row["time"], "level": level, "wick_high": row["high"]})
         if not past_lows.empty:
             level = past_lows["low"].iloc[-1]
             if row["low"] < level and row["close"] > level:
-                sweeps.append({
-                    "type": "buy_side_sweep", "time": row["time"],
-                    "level": level, "wick_low": row["low"],
-                })
+                sweeps.append({"type": "buy_side_sweep", "time": row["time"], "level": level, "wick_low": row["low"]})
     return sweeps
 
 
 def analyze_symbol(htf_df: pd.DataFrame, mtf_df: pd.DataFrame, ltf_df: pd.DataFrame) -> dict:
-    """
-    Uch timeframe'ni birlashtirib, yakuniy signal xulosasini chiqaradi:
-    HTF - trend yo'nalishi, MTF - OB/FVG zonalari, LTF - kirish trigeri (sweep/CHoCH).
-    """
     htf_structure = detect_market_structure(htf_df)
     mtf_obs = detect_order_blocks(mtf_df)
     mtf_fvgs = detect_fvg(mtf_df)
@@ -193,11 +145,12 @@ def analyze_symbol(htf_df: pd.DataFrame, mtf_df: pd.DataFrame, ltf_df: pd.DataFr
             reason.append("LTF'da sell-side likvidlik supurildi")
             reason.append("LTF'da tuzilma buzilishi (BOS/CHoCH) pastga")
 
+    last_close = ltf_df["close"].iloc[-1]
+
     return {
         "signal": signal,
         "reason": reason,
         "htf_trend": trend,
         "mtf_order_blocks": mtf_obs[-3:],
         "mtf_fvgs": mtf_fvgs[-3:],
-        "ltf_sweep": last_sweep,
-    }
+        "lt
