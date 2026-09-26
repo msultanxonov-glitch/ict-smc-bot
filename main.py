@@ -132,4 +132,14 @@ def scan_loop():
 
     mode = "AVTOMAT SAVDO YOQILGAN (BTCUSD)" if AUTO_TRADE_ENABLED else "faqat signal"
     send_telegram_message(
-        "🤖 ICT/SMC bot ishga tushdi. K
+        "🤖 ICT/SMC bot ishga tushdi. Kuzatilayotgan instrumentlar: "
+        + ", ".join(s["name"] for s in SYMBOLS)
+        + f"\nRejim: {mode}"
+    )
+    while True:
+        scan_once()
+        time.sleep(SCAN_INTERVAL_SECONDS)
+
+
+if __name__ == "__main__":
+    scan_loop()
