@@ -14,7 +14,7 @@ SCAN_INTERVAL_SECONDS = int(os.getenv("SCAN_INTERVAL_SECONDS", "1200"))
 
 SYMBOLS = [
     {"name": "XAUUSD", "source": "twelvedata", "td_symbol": "XAU/USD"},
-    {"name": "NASDAQ", "source": "twelvedata", "td_symbol": "NDX"},
+    {"name": "NASDAQ", "source": "twelvedata", "td_symbol": "QQQ"},
     {"name": "BTCUSD", "source": "twelvedata", "td_symbol": "BTC/USD"},
 ]
 
